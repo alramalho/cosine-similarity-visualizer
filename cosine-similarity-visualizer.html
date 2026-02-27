@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosine Similarity Visualizer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 640px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #999;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .field { margin-bottom: 1.25rem; }
+    input, textarea {
+      width: 100%;
+      background: #151515;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 0.7rem 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus { border-color: #555; }
+    input[type="password"] { font-family: monospace; letter-spacing: 0.1em; }
+    textarea { resize: vertical; min-height: 80px; }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .result {
+      margin-top: 2rem;
+      text-align: center;
+      display: none;
+    }
+    .score {
+      font-size: 3.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .score-label {
+      color: #888;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+    .bar-track {
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.6s ease, background 0.6s ease;
+    }
+    .error {
+      margin-top: 1rem;
+      color: #f87171;
+      font-size: 0.85rem;
+      text-align: center;
+      display: none;
+    }
+    .dims {
+      color: #555;
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cosine Similarity Visualizer</h1>
+    <p class="subtitle">Compare two texts using OpenAI text-embedding-3-small</p>
+
+    <div class="field">
+      <label for="apikey">OpenAI API Key</label>
+      <input type="password" id="apikey" placeholder="sk-..." />
+    </div>
+
+    <div class="field">
+      <label for="text1">Text A</label>
+      <textarea id="text1" placeholder="Enter first text..."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="text2">Text B</label>
+      <textarea id="text2" placeholder="Enter second text..."></textarea>
+    </div>
+
+    <button id="btn" onclick="compare()">Compare</button>
+
+    <div class="error" id="error"></div>
+
+    <div class="result" id="result">
+      <div class="score" id="score">—</div>
+      <div class="score-label">Cosine Similarity</div>
+      <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+      <div class="dims" id="dims"></div>
+    </div>
+
+    <p style="color:#555;font-size:0.75rem;text-align:center;margin-top:2.5rem;">
+      Nothing is stored anywhere. Full source code on
+      <a href="https://github.com/alramalho/cosine-similarity-visualizer" target="_blank" rel="noopener" style="color:#888;text-decoration:underline;">GitHub</a>.
+    </p>
+    <p style="font-family:monospace;font-size:0.75rem;text-align:center;margin-top:0.75rem;opacity:0.6;">
+      <span style="opacity:0.7;">made by</span> <a href="https://github.com/alramalho" target="_blank" rel="noopener" style="color:#888;text-decoration:underline;">@alramalho</a>
+    </p>
+  </div>
+
+  <script>
+    function cosine(a, b) {
+      let dot = 0, na = 0, nb = 0;
+      for (let i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        na += a[i] * a[i];
+        nb += b[i] * b[i];
+      }
+      return dot / (Math.sqrt(na) * Math.sqrt(nb));
+    }
+
+    function barColor(v) {
+      if (v > 0.8) return '#4ade80';
+      if (v > 0.5) return '#facc15';
+      if (v > 0.2) return '#fb923c';
+      return '#f87171';
+    }
+
+    async function getEmbeddings(texts, key) {
+      const res = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({ model: 'text-embedding-3-small', input: texts })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error?.message || `API error ${res.status}`);
+      }
+      const data = await res.json();
+      return data.data.sort((a, b) => a.index - b.index).map(d => d.embedding);
+    }
+
+    async function compare() {
+      const key = document.getElementById('apikey').value.trim();
+      const t1 = document.getElementById('text1').value.trim();
+      const t2 = document.getElementById('text2').value.trim();
+      const errEl = document.getElementById('error');
+      const resEl = document.getElementById('result');
+
+      errEl.style.display = 'none';
+      if (!key || !t1 || !t2) {
+        errEl.textContent = 'Please fill in all fields.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('btn');
+      btn.disabled = true;
+      btn.textContent = 'Computing...';
+
+      try {
+        const [e1, e2] = await getEmbeddings([t1, t2], key);
+        const sim = cosine(e1, e2);
+
+        document.getElementById('score').textContent = sim.toFixed(4);
+        const bar = document.getElementById('bar');
+        const pct = Math.max(0, Math.min(100, ((sim + 1) / 2) * 100));
+        bar.style.width = pct + '%';
+        bar.style.background = barColor(sim);
+        document.getElementById('dims').textContent = `${e1.length} dimensions`;
+        resEl.style.display = 'block';
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Compare';
+      }
+    }
+  </script>
+</body>
+</html>
