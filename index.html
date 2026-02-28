@@ -120,13 +120,14 @@
       margin-bottom: 0.5rem;
     }
     .pill {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 500;
-      padding: 0.25rem 0.65rem;
+      padding: 0.3rem 0.7rem;
       border-radius: 999px;
-      border: none;
+      border: 1px solid;
       cursor: pointer;
       transition: opacity 0.15s;
+      background: transparent;
       width: auto;
     }
     .pill:hover { opacity: 0.7; }
@@ -145,10 +146,10 @@
 
     <div class="examples">
       <label>Examples</label>
-      <button class="pill" style="color:#1a2e1f;background:#6ec987" onclick="loadExample(0)">Cat</button>
-      <button class="pill" style="color:#2e1a1a;background:#c97272" onclick="loadExample(1)">Weather</button>
-      <button class="pill" style="color:#2e2a1a;background:#c9b46e" onclick="loadExample(2)">Code</button>
-      <button class="pill" style="color:#1a2e1f;background:#6ec987" onclick="loadExample(3)">Food</button>
+      <button class="pill" style="color:#6ec987;border-color:#3a5e42" onclick="loadExample(0)">Cat</button>
+      <button class="pill" style="color:#c97272;border-color:#5e3a3a" onclick="loadExample(1)">Weather</button>
+      <button class="pill" style="color:#c9b46e;border-color:#5e533a" onclick="loadExample(2)">Code</button>
+      <button class="pill" style="color:#6ec987;border-color:#3a5e42" onclick="loadExample(3)">Food</button>
     </div>
 
     <div class="field">
